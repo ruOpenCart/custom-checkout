@@ -1,40 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <modification>
 	<name>Custom Checkout</name>
-	<code>custom</code>
-	<version>2.1.5</version>
+	<code>ocn_custom_checkout</code>
+	<version>3</version>
 	<author>matroskin92</author>
 	<link>https://matro.site/</link>
 
-	<file path="catalog/controller/checkout/checkout.php">
-		<operation>
-			<search>
-				<![CDATA[
-					public function index() {
-				]]>
-			</search>
-			<add position="after">
-				<![CDATA[
-					$this->response->redirect($this->url->link('extension/module/custom'));
-				]]>
-			</add>
-		</operation>
-	</file> 
-
-	<file path="catalog/controller/checkout/cart.php">
-		<operation>
-			<search>
-				<![CDATA[
-					public function index() {
-				]]>
-			</search>
-			<add position="after">
-				<![CDATA[		
-					$this->response->redirect($this->url->link('extension/module/custom'));
-				]]>
-			</add>
-		</operation>
-	</file>
+	<!-- Admin - Item in Menu -->
 	<file path="admin/controller/common/column_left.php">
 		<operation>
 			<search>
@@ -43,8 +15,8 @@
 				]]>
 			</search>
 			<add position="before">
-				<![CDATA[		
-					if ($this->user->hasPermission('access', 'extension/module/custom')) {		
+				<![CDATA[
+					if ($this->user->hasPermission('access', 'extension/module/custom')) {
 						$marketplace[] = array(
 							'name'	   => $this->language->get('text_module_custom'),
 							'href'     => $this->url->link('extension/module/custom', 'user_token=' . $this->session->data['user_token'], true),
@@ -79,6 +51,57 @@
 			<add position="before">
 				<![CDATA[
 					$_['text_module_custom'] = 'Custom Checkout';
+				]]>
+			</add>
+		</operation>
+	</file>
+
+	<!-- StartUp -->
+	<file path="catalog/controller/startup/startup.php">
+		<operation>
+			<search>
+				<![CDATA[
+					$this->registry->set('cart', new Cart\Cart($this->registry));
+				]]>
+			</search>
+			<add position="after">
+				<![CDATA[
+				// Custom Checkout
+				$this->registry->set('custom', new Custom($this->registry));
+				]]>
+			</add>
+		</operation>
+	</file>
+
+	<!-- Redirect -->
+	<file path="catalog/controller/checkout/checkout.php">
+		<operation>
+			<search>
+				<![CDATA[
+					public function index() {
+				]]>
+			</search>
+			<add position="after">
+				<![CDATA[
+				if ($this->config->get('module_custom_status') && $this->config->get('module_custom_redirect_checkout')) {
+					$this->response->redirect($this->url->link('extension/module/custom'));
+				}
+				]]>
+			</add>
+		</operation>
+	</file>
+	<file path="catalog/controller/checkout/cart.php">
+		<operation>
+			<search>
+				<![CDATA[
+					public function index() {
+				]]>
+			</search>
+			<add position="after">
+				<![CDATA[
+					if ($this->config->get('module_custom_status') && $this->config->get('module_custom_redirect_cart')) {
+						$this->response->redirect($this->url->link('extension/module/custom'));
+					}
 				]]>
 			</add>
 		</operation>

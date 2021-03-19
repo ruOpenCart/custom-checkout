@@ -1,70 +1,22 @@
 <?php
 class ControllerExtensionModuleCustomPayment extends Controller {
-	public function index($setting) {
+	public function index() {
 
-		$this->load->language('extension/module/custom/payment');
+		$this->load->language('extension/module/custom');
+		$this->load->model('extension/module/custom');
+
+		$setting = $this->config->get('module_custom_payment');
 
 		// Customer Group
 		if ($this->customer->isLogged()) {
-			$data['customer_group_id'] = $this->customer->getGroupId();
+			$customer_group_id = $this->customer->getGroupId();
+		} elseif (isset($this->session->data['guest']['customer_group_id'])) {
+			$customer_group_id = $this->session->data['guest']['customer_group_id'];
 		} else {
-			$data['customer_group_id'] = $this->config->get('config_customer_group_id');
-		}
-		
-		// Totals
-		$result = $this->load->controller('extension/module/custom/total/gettotals');
-		$total = $result['total'];
-
-		$recurring = $this->cart->hasRecurringProducts();
-
-		if (!empty($this->sesstion->data['shipping_address']['country_id'])) {
-			$country_id = $this->sesstion->data['shipping_address']['country_id'];
-		} else {
-			$country_id = $this->config->get('config_country_id');
+			$customer_group_id = $this->config->get('config_customer_group_id');
 		}
 
-		if (!empty($this->sesstion->data['shipping_address']['zone_id'])) {
-			$zone_id = $this->sesstion->data['shipping_address']['zone_id'];
-		} else {
-			$zone_id = $this->config->get('config_zone_id');
-		}
-
-		// Payment Methods
-		$method_data = array();
-		$results = $this->model_setting_extension->getExtensions('payment');
-
-		foreach ($results as $result) {
-			if ($this->config->get('payment_' . $result['code'] . '_status')) {
-
-				$this->load->model('extension/payment/' . $result['code']);
-				$method = $this->{'model_extension_payment_' . $result['code']}->getMethod(array(
-					'country_id' => $country_id,
-					'zone_id' => $zone_id
-				), $total);
-
-				if ($method)  {
-					if ($recurring) {
-						if (property_exists($this->{'model_extension_payment_' . $result['code']}, 'recurringPayments') && $this->{'model_extension_payment_' . $result['code']}->recurringPayments()) {
-							$method_data[$result['code']] = $method;
-						}
-					} else {
-						$method_data[$result['code']] = $method;
-					}
-				}
-			}
-		} 
-
-		$sort_order = array();
-
-		foreach ($method_data as $key => $value) {
-			$sort_order[$key] = $value['sort_order'];
-		}
-
-		array_multisort($sort_order, SORT_ASC, $method_data);
-
-		$this->session->data['payment_methods'] = $method_data;
-
-		$data['heading_payment'] = $this->language->get('heading_payment');
+		$this->session->data['payment_methods'] = $this->getMethods($customer_group_id);
 
 		if (empty($this->session->data['payment_methods'])) {
 			$data['error_warning'] = sprintf($this->language->get('error_no_payment'), $this->url->link('information/contact'));
@@ -84,7 +36,9 @@ class ControllerExtensionModuleCustomPayment extends Controller {
 			$data['code'] = '';
 		}
 
-		$data['scripts'] = $this->document->getScripts();
+		// echo '<pre>';
+		// print_r($this->session->data);
+		// echo '</pre>';
 
 		return $this->load->view('extension/module/custom/payment', $data);
 	}
@@ -95,61 +49,76 @@ class ControllerExtensionModuleCustomPayment extends Controller {
 		// Customer Group
 		if ($this->customer->isLogged()) {
 			$customer_group_id = $this->customer->getGroupId();
-		} elseif (isset($this->request->get['customer_group_id'])) {
-			$customer_group_id = $this->request->get['customer_group_id'];
+		} elseif (isset($this->session->data['guest']['customer_group_id'])) {
+			$customer_group_id = $this->session->data['guest']['customer_group_id'];
 		} else {
 			$customer_group_id = $this->config->get('config_customer_group_id');
 		}
 
-		$this->load->model('setting/setting');
-
-		$setting = json_decode($this->model_setting_setting->getSettingValue('module_custom_payment'), true);
-		foreach($setting['methods'] as $method){
-
-			if (isset($method['customer_group']) && in_array($customer_group_id, $method['customer_group'])){
-				$json[] = array(
-					'name' => str_replace('_', '-', $method['name'])
-				);
-			}
+		if (!empty($this->request->post['payment_method']) && isset($this->session->data['payment_methods'][$this->request->get['payment_method']])) {
+			$this->session->data['payment_method'] = $this->session->data['payment_methods'][$this->request->get['payment_method']];
 		}
-
-
 
 		$this->response->addHeader('Content-Type: application/json');
 		$this->response->setOutput(json_encode($json));
 	}
 
-	public function save(){
+	private function getMethods($customer_group_id){
 
-		$json = array();
+		$this->load->model('setting/extension');
+		$this->load->model('extension/module/custom');
 
-		$this->load->language('extension/module/custom/payment');
+		// Allow
+		$allow = array();
 
-		if (!isset($this->request->post['payment_method'])) {
-			$json['error']['payment_method'] = $this->language->get('error_payment1');
-		} elseif (!isset($this->session->data['payment_methods'][$this->request->post['payment_method']])) {
-			$json['error']['payment_method'] = $this->language->get('error_payment2');
-		}
-
-		if ($this->config->get('config_checkout_id')) {
-			$this->load->model('catalog/information');
-
-			$information_info = $this->model_catalog_information->getInformation($this->config->get('config_checkout_id'));
-
-			if ($information_info && !isset($this->request->post['agree'])) {
-				$json['error']['agree'] = sprintf($this->language->get('error_agree'), $information_info['title']);
+		// Settings
+		$setting = $this->config->get('module_custom_payment');
+		foreach($setting['methods'] as $method){
+			if (isset($method['customer_group']) && in_array($customer_group_id, $method['customer_group'])){
+				$allow[] = $method['name'];
 			}
 		}
 
-		if (!$json) {
-			$this->session->data['payment_method'] = $this->session->data['payment_methods'][$this->request->post['payment_method']];
+		// Location
+		$location = $this->model_extension_module_custom->getCurrentLocation();
+
+		// Totals
+		$totals = $this->model_extension_module_custom->getTotals();
+		$last_total = array_pop($totals);
+
+		// Recurring
+		$recurring = $this->cart->hasRecurringProducts();
+
+		// Payment Methods
+		$method_data = array();
+		foreach ($this->model_setting_extension->getExtensions('payment') as $result) {
+
+			if ($this->config->get('payment_' . $result['code'] . '_status') && in_array($result['code'], $allow)) {
+
+				$this->load->model('extension/payment/' . $result['code']);
+				$method = $this->{'model_extension_payment_' . $result['code']}->getMethod($location, $last_total['value']);
+
+				if ($method)  {
+					if ($recurring) {
+						if (property_exists($this->{'model_extension_payment_' . $result['code']}, 'recurringPayments') && $this->{'model_extension_payment_' . $result['code']}->recurringPayments()) {
+							$method_data[$result['code']] = $method;
+						}
+					} else {
+						$method_data[$result['code']] = $method;
+					}
+				}
+			}
 		}
 
-		$json['session'] = $this->request->post['payment_method'];
+		$sort_order = array();
 
-		$this->response->addHeader('Content-Type: application/json');
-		$this->response->setOutput(json_encode($json));
+		foreach ($method_data as $key => $value) {
+			$sort_order[$key] = $value['sort_order'];
+		}
 
+		array_multisort($sort_order, SORT_ASC, $method_data);
+
+		return $method_data;
 	}
 
 }

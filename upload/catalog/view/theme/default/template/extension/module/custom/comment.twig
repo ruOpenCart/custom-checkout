@@ -1,5 +1,15 @@
-<h2>{{ heading_comment }}</h2>
-<div class="form-group">
-	<label class="control-label" for="input-comment">{{ entry_comment }}</label>
-	<textarea name="comment" rows="5" placeholder="{{ entry_comment }}" id="input-comment" class="form-control">{{ comment }}</textarea>
+<div class="panel panel-default">
+  <div class="panel-heading">{{ text_head_comment }}</div>
+  <div class="panel-body">
+		<div class="form-group">
+			{# <label class="control-label" for="input-comment">{{ entry_comment }}</label> #}
+			<textarea name="comment" rows="5" placeholder="{{ entry_comment }}" id="input-comment" class="form-control">{{ comment }}</textarea>
+		</div>
+	</div>
 </div>
+<script>
+let customComment;
+document.addEventListener("DOMContentLoaded", () => {
+  customComment = new CustomComment();
+});
+</script>

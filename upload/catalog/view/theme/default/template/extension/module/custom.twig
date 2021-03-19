@@ -1,132 +1,68 @@
-{{ header }} 
-
+{{ header }}
 <div class="container">
-
 	<ul class="breadcrumb">
-	{% for breadcrumb in breadcrumbs %} 
+	{% for breadcrumb in breadcrumbs %}
 		<li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
-	{% endfor %} 
+	{% endfor %}
 	</ul>
-
 	{{ content_top }}
-
 	<h2>{{ page_title }}</h2>
-
-	{% if errors %}
-		{% for error in errors %}
-			<div class="alert alert-warning">{{ error }}</div>
-		{% endfor %}
+	{% if warning %}
+		<div style="font-weight: bold; margin-bottom: 1rem;">{{ warning }}</div>
 	{% elseif empty %}
 		<div class="alert alert-info">{{ empty }}</div>
 	{% endif %}
-
 	{% if cart %}
-		<div id="custom-cart">
-			{{ cart }}
-		</div>
+		<div id="custom-cart">{{ cart }}</div>
 	{% endif %}
-
 	<div class="row">
-		<div class="col-sm-8">
-			{{ column_left }}
-			{% if login and not logged %} 
+		<div class="col-sm-8" id="column-main">
+			{% if login and not logged %}
 				<div id="custom-login">{{ login }}</div>
-			{% endif %} 
-			{% if customer and not logged %} 
+			{% endif %}
+			{% if not logged %}
 				<div id="custom-customer">{{ customer }}</div>
-			{% endif %} 
-			{% if shipping and shipping != constant('false') %} 
+			{% endif %}
+			{% if shipping %}
 				<div id="custom-shipping">{{ shipping }}</div>
-			{% endif %} 
-			{% if payment %} 
+			{% endif %}
+			{% if payment %}
 				<div id="custom-payment">{{ payment }}</div>
-			{% endif %}	
-			{% if comment and comment != constant('false') %} 
+			{% endif %}
+			{% if comment %}
 				<div id="custom-comment">{{ comment }}</div>
-			{% endif %} 
+			{% endif %}
 		</div>
-		<div class="col-sm-4">
+		<div class="col-sm-4" id="column-aside">
 			{{ column_right }}
-			{% if module %} 
+			{% if module %}
 				<div id="custom-module">{{ module }}</div>
-			{% endif %} 
-			{% if total %} 
+			{% endif %}
+			{% if total %}
 				<div id="custom-total">{{ total }}</div>
-			{% endif %} 
+			{% endif %}
 		</div>
 	</div>
-
-	{% if payment %} 
+	{% if payment %}
 		<div class="buttons" id="custom-control">
-			<div class="pull-right" style="width: 100%;">
-				{% if text_agree %} 
-					<input type="checkbox" name="agree" value="1" {% if agree %} checked="checked" {% endif %}  />
-					&nbsp;
-					<label for="input-agree" class="control-label">{{ text_agree }}</label>
-					<br>
+			{% if text_agree %}
+				{% if (agree) %}
+					<input type="checkbox" name="agree" value="1" checked="checked" />
+				{% else %}
+					<input type="checkbox" name="agree" value="1" />
 				{% endif %} 
-				<input type="button" value="{{ button_continue }}" id="button-custom-order" data-loading-text="{{ text_loading }}" class="btn btn-primary" style="display: block!important"/>
-			</div>
-			<div class="clearfix"></div>
+					&nbsp;
+				{{ text_agree }}<br>
+			{% endif %}
+			<button type="button" id="button-checkout" data-loading-text="{{ text_loading }}" class="btn btn-primary">{{ button_continue }}</button>
 		</div>
 	{% endif %}
-
 	{{ content_bottom }}
-
 	<div id="custom-confirm" style="display: none;"></div>
-	
-</div> 
-
-<script>
-$(document).ready(function() {
-
-  $('#button-custom-order').on('click', function(){
-
-  	{% if (not logged) %} 
-
-			checkoutCustomer()
-				{% if (login is defined and login != constant('false')) %} 
-					.then( checkoutLogin )
-				{% endif %} 
-				{% if (shipping is defined and shipping != constant('false')) %} 
-					.then( checkoutShipping )
-				{% endif %} 
-					.then( checkoutPayment )
-				{% if (comment is defined and comment != constant('false')) %} 
-					.then( checkoutComment )
-				{% endif %} 
-					.then( checkoutConfirm )
-					.catch( failureCallback );
-
-  	{% else %} 
-
-  		{% if (shipping is defined and shipping != constant('false')) %} 
-
-  			checkoutShipping()
-  				.then( checkoutPayment )
-  				{% if (comment is defined and comment != constant('false')) %} 
-					.then( checkoutComment )
-				{% endif %} 
-				.then( checkoutConfirm )
-				.catch( failureCallback );
-
-  		{% else %} 
-
-  			checkoutPayment()
-  				{% if (comment is defined and comment != constant('false')) %} 
-						.then( checkoutComment )
-					{% endif %} 
-					.then( checkoutConfirm )
-					.catch( ailureCallback );
-
-
-  		{% endif %}	
-
-  	{% endif %} 
-
-  });
-
-});
-  
-</script>
+</div>
 {{ footer }}
+<script>
+$('.ajax-popup-link').magnificPopup({
+  type: 'ajax'
+});
+</script>

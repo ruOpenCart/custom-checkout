@@ -1,87 +1,105 @@
-{% if products %} 
-<form action="{{ action }}" method="post" enctype="multipart/form-data">
-  <div class="table-responsive">
-    <table class="table table-bordered">
-      <thead>
-        <tr>
-          {% for column, name in setting.columns %} 
-              <td class="text-center" id="column_{{column}}">{{ name }}</td>
-          {% endfor %} 
-        </tr>
-      </thead>
-      <tbody>
-        {% for product in products %} 
-        <tr>
-
-          {% for column, name in setting.columns %} 
-
-            {% if (column == 'image') %} 
-              <td class="text-center">{% if (product.thumb) %}<a href="{{ product['href'] }}"><img src="{{ product.thumb }}" alt="{{ product.name }}" title="{{ product.name }}" class="img-thumbnail" /></a>{% endif %}</td>
-            {% endif %} 
-
-            {% if (column == 'name') %} 
-              <td class="text-left"><a href="{{ product['href'] }}">{{ product.name }}</a>
-                {% if (not product['stock']) %} 
-                <span class="text-danger">***</span>
-                {% endif %} 
-                {% if (product.option) %} 
-                {% for option in product.option %} 
-                <br />
-                <small>{{ option.name }}: {{ option.value }}</small>
-                {% endfor %} 
-                {% endif %} 
-                {% if (product.reward) %} 
-                <br />
-                <small>{{ product.reward }}</small>
-                {% endif %} 
-                {% if (product.recurring) %} 
-                <br />
-                <span class="label label-info">{{ text_recurring_item }}</span> <small>{{ product.recurring }}</small>
-                {% endif %}</td>
-            {% endif %} 
-
-            {% if (column == 'model') %} 
-              <td class="text-left">{{ product.model }}</td>
-            {% endif %} 
-
-            {% if (column == 'sku') %} 
-              <td class="text-left">{{ product.sku }}</td>
-            {% endif %} 
-
-            {% if (column == 'quantity') %} 
-              <td class="text-left">
-                <div class="input-group" style="max-width: 200px;">
-                  <span class="input-group-btn">
-                    <button class="btn btn-default" type="button" onclick="custom_cart.update({{ product.cart_id }}, {{ product.quantity - 1 }})" {% if product.quantity == 1 %} disabled {% endif %}><i class="fa fa-minus"></i></button>
-                  </span>
-                  <input type="text" oninput="custom_cart.change({{ product.cart_id }}, event)" name="quantity[{{ product.cart_id }}]" value="{{ product.quantity }}" size="1" class="form-control" />
-                  <span class="input-group-btn">
-                    <button class="btn btn-default" type="button" onclick="custom_cart.update({{ product.cart_id }}, {{ product.quantity + 1 }})"><i class="fa fa-plus"></i></button>
-                  </span>
-                </div>
-              </td>
-            {% endif %} 
-
-            {% if (column == 'price') %} 
-              <td class="text-right">{{ product.price }}</td>
-            {% endif %} 
-
-            {% if (column == 'total') %} 
-              <td class="text-right">{{ product.total }}</td>
-            {% endif %} 
-
-            {% if (column == 'remove') %} 
-              <td class="text-left">
-                 <button type="button" data-toggle="tooltip" title="{{ button_remove }}" class="btn btn-danger" onclick="custom_cart.remove('{{ product.cart_id }}');"><i class="fa fa-times-circle"></i></button>
-              </td>
-            {% endif %} 
-
-          {% endfor %} 
-
-        </tr>
-        {% endfor %} 
-      </tbody>
-		</table>
-  </div>
-</form>
-{% endif %} 
+{% if (error_warning) %}
+  <div class="alert alert-warning"><i class="fa fa-exclamation-circle"></i> {{ error_warning }}</div>
+{% endif %}
+<div class="table-responsive">
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        {% for column in columns %}
+          <td class="text-center" id="column_{{ column.name }}">{{ column.text }}</td>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for product in products %}
+      <tr>
+        {% for column in columns %}
+          {% if (column.name == 'image') %}
+            <td class="text-center" width="80px">{% if (product.thumb) %}<a href="{{ product['href'] }}"><img src="{{ product.thumb }}" alt="{{ product.name }}" title="{{ product.name }}" class="img-thumbnail" /></a>{% endif %}</td>
+          {% endif %}
+          {% if (column.name == 'name') %}
+            <td class="text-left"><a href="{{ product['href'] }}">{{ product.name }}</a>
+              {% if not product['stock'] %}
+              <span class="text-danger">***</span>
+              {% endif %}
+              {% if (product.option) %}
+              {% for option in product.option %}
+              <br />
+              <small>{{ option.name }}: {{ option.value }}</small>
+              {% endfor %}
+              {% endif %}
+              {% if (product.reward) %}
+              <br />
+              <small>{{ product.reward }}</small>
+              {% endif %}
+              {% if (product.recurring) %}
+              <br />
+              <span class="label label-info">{{ text_recurring_item }}</span> <small>{{ product.recurring }}</small>
+              {% endif %}</td>
+          {% endif %}
+          {% if (column.name == 'model') %}
+            <td class="text-left">{{ product.model }}</td>
+          {% endif %}
+          {% if (column.name == 'sku') %}
+            <td class="text-left">{{ product.sku }}</td>
+          {% endif %}
+          {% if (column.name == 'weight') %}
+            <td class="text-center">{{ product.weight }}</td>
+          {% endif %}
+          {% if (column.name == 'quantity') %}
+            <td class="text-left" width="200px">
+              <div class="input-group">
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button" onclick="customCart.cartProductMinus({{ product.cart_id }});"><i class="fa fa-minus"></i></button>
+                </span>
+                <input type="text" name="quantity[{{ product.cart_id }}]" value="{{ product.quantity }}" oninput="customCart.cartProductInput({{ product.cart_id }});" class="form-control" />
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button" onclick="customCart.cartProductPlus({{ product.cart_id }});"><i class="fa fa-plus"></i></button>
+                </span>
+              </div>
+            </td>
+          {% endif %}
+          {% if (column.name == 'price') %}
+            <td class="text-center">{{ product.price }}</td>
+          {% endif %}
+          {% if (column.name == 'total') %}
+            <td class="text-center">{{ product.total }}</td>
+          {% endif %}
+          {% if (column.name == 'remove') %}
+            <td class="text-center" width="40px">
+              <button type="button" data-toggle="tooltip" title="{{ button_remove }}" class="btn btn-danger" onclick="customCart.cartProductRemove('{{ product.cart_id }}');"><i class="fa fa-times"></i></button>
+            </td>
+          {% endif %}
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+    {% if weight or totals %}
+    <tfoot>
+      <tr>
+        {% for column in columns %}
+          {% if column.name != 'weight' and column.name != 'total' %}
+            <td>&nbsp;</td>
+          {% endif %}
+          {% if column.name == 'weight' and weight %}
+            <td class="text-center">{{ weight }}</td>
+          {% elseif column.name == 'weight' %}
+            <td>&nbsp;</td>
+          {% endif %}
+          {% if column.name == 'total' and totals %}
+            <td class="text-center">{{ totals }}</td>
+          {% elseif column.name == 'total' %}
+            <td>&nbsp;</td>
+          {% endif %}
+        {% endfor %}
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
+</div>
+<script>
+let customCart;
+document.addEventListener("DOMContentLoaded", () => {
+  customCart = new CustomCart();
+});
+</script>

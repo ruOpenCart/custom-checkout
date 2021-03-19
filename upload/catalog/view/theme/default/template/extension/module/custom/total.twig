@@ -1,8 +1,18 @@
 <table class="table table-bordered">
-	{% for total in totals %} 
+	{% for total in totals %}
 		<tr>
 			<td class="text-right"><strong>{{ total.title }}:</strong></td>
 			<td class="text-right">{{ total.text }}</td>
 		</tr>
-	{% endfor %} 
+	{% endfor %}
 </table>
+<script>
+let customTotal;
+document.addEventListener("DOMContentLoaded", () => {
+  customTotal = new CustomTotal();
+});
+document.addEventListener('ch.total.render', () => {
+  customTotal.destroyTotal();
+  customTotal = new CustomTotal();
+});
+</script>

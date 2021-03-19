@@ -1,40 +1,26 @@
 <?php
 class ControllerExtensionModuleCustomComment extends Controller {
-	public function index($setting = array()) {
+	public function index() {
 
-		if (isset($setting['status']) && (bool)$setting['status'] === true) {
-			$this->load->language('extension/module/custom/comment');
+    if (!$this->config->get('module_custom_comment')) return false;
 
-			$data['heading_comment'] = $this->language->get('heading_comment');
-			$data['entry_comment'] = $this->language->get('entry_comment');
+		$this->load->language('extension/module/custom');
 
-			if (isset($this->session->data['comment'])) {
-				$data['comment'] = $this->session->data['comment'];
-			} else {
-				$data['comment'] = '';
-			}
-
-			$data['setting'] = $setting;
-			return $this->load->view('extension/module/custom/comment', $data);
-
+		if (isset($this->session->data['comment'])) {
+			$data['comment'] = $this->session->data['comment'];
 		} else {
-
-			$this->session->data['comment'] = '';
-			return false;
-
+			$data['comment'] = '';
 		}
+
+		return $this->load->view('extension/module/custom/comment', $data);
 
 	}
 
-	public function save(){
+	public function update(){
 
 		$json = array();
 
-		$this->load->language('extension/module/custom/comment');
-
-		if (!isset($this->request->post['comment'])) {
-			$json['error']['warning'] = $this->language->get('error_payment');
-		} else {
+		if (!empty($this->request->post['comment'])) {
 			$this->session->data['comment'] = $this->request->post['comment'];
 		}
 

@@ -1,0 +1,63 @@
+<div class="modal-dialog" role="document">
+  <form class="modal-content" id="form-region">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <h4 class="modal-title">{{ entry_region }}</h4>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <input type="text" name="region" value="{{ region }}" placeholder="{{ entry_region }}" class="form-control">
+        <input type="hidden" name="region_id" value="{{ region_id }}">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-default" data-dismiss="modal">{{ button_close }}</button>
+      <button type="submit" class="btn btn-primary" id="button-region">{{ button_save }}</button>
+    </div>
+  </form>
+  <script>
+    $('input[name=\'region\']').autocomplete({
+      'source': function(request, response) {
+        $.ajax({
+          url: 'index.php?route=extension/module/custom/region/autocomplete&filter_name=' +  encodeURIComponent(request),
+          dataType: 'json',
+          success: function(json) {
+            json.unshift({
+              region_id: 0,
+              name: '{{ text_none }}'
+            });
+
+            response($.map(json, function(item) {
+              return {
+                label: item['name'],
+                value: item['zone_id']
+              }
+            }));
+          }
+        });
+      },
+      'select': function(item) {
+        $('input[name=\'region\']').val(item['label']);
+        $('input[name=\'region_id\']').val(item['value']);
+      }
+    });
+  </script>
+  <script>
+    $('#form-region').on('submit', function(event){
+      event.preventDefault();
+      console.log($('#form-region input[name="region_id"'))
+      $.ajax({
+        url: 'index.php?route=extension/module/custom/region/update',
+        type: 'POST',
+        dataType: 'json',
+        data: $('#form-region input[name="region_id"'),
+        success: function(json) {
+          $.magnificPopup.close();
+          if (json['status']){
+            customShipping.render();
+          }
+        }
+      });
+    });
+  </script>
+</div>
